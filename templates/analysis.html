@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SHA-1 NL | Análisis del algoritmo</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<main class="shell">
+  <nav class="top-nav"><a href="/">Generador</a><a class="active" href="/analysis">Análisis del algoritmo</a></nav>
+  <header class="hero">
+    <div class="eyebrow">TRAZABILIDAD DEL PROCESAMIENTO · V1.0</div>
+    <h1>ANÁLISIS <span>NL</span></h1>
+    <p>Consulta los datos reales de padding, expansión de palabras y ejecución de las 80 iteraciones.</p>
+  </header>
+
+  <section class="panel">
+    <form method="post">
+      <label for="message">Mensaje que deseas analizar</label>
+      <textarea id="message" name="message" required placeholder="Escribe el mismo mensaje que quieras examinar...">{{ original }}</textarea>
+      <div class="actions">
+        <span class="hint">Los valores se calculan nuevamente en Python.</span>
+        <button type="submit">Analizar algoritmo <span>→</span></button>
+      </div>
+    </form>
+  </section>
+
+  {% if error %}<section class="result error">{{ error }}</section>{% endif %}
+
+  {% if report %}
+  <section class="result">
+    <div class="eyebrow">RESUMEN DEL PROCESAMIENTO</div>
+    <div class="analysis-grid">
+      <div class="metric"><strong>{{ report.message_bytes }}</strong><span>Bytes originales</span></div>
+      <div class="metric"><strong>{{ report.padded_bytes }}</strong><span>Bytes con padding</span></div>
+      <div class="metric"><strong>{{ report.block_count }}</strong><span>Bloques procesados</span></div>
+      <div class="metric"><strong>80</strong><span>Iteraciones por bloque</span></div>
+    </div>
+    <h2>Hash resultante</h2>
+    <code id="hash">{{ report.digest }}</code>
+    <button class="copy" type="button" onclick="copyAnalysisHash()">Copiar hash</button>
+  </section>
+
+  <section class="result">
+    <div class="eyebrow">ETAPA 1</div><h2>Padding y bloques</h2>
+    <p class="hint">Longitud original: {{ report.message_bits }} bits. El padding conserva el formato SHA-1 y añade la longitud original en 64 bits big-endian.</p>
+    <details><summary>Ver mensaje con padding (hexadecimal)</summary><pre>{{ report.padding_hex }}</pre></details>
+    {% for block in report.blocks %}
+      <details><summary>Bloque {{ block.number }} · 512 bits</summary><pre>{{ block.hex }}</pre></details>
+    {% endfor %}
+  </section>
+
+  <section class="result">
+    <div class="eyebrow">ETAPA 2</div><h2>Expansión de palabras W₀–W₇₉</h2>
+    <p class="hint">W₀–W₁₅ provienen del bloque. W₁₆–W₇₉ se calculan mediante la expansión NL personalizada.</p>
+    {% for block in report.blocks %}
+      <details open><summary>Palabras del bloque {{ block.number }}</summary>
+        <div class="table-wrap"><table><thead><tr><th>Palabra</th><th>Valor hexadecimal</th><th>Origen</th></tr></thead><tbody>
+        {% for word in block.words %}
+          <tr><td>W{{ loop.index0 }}</td><td>{{ word }}</td><td>{% if loop.index0 < 16 %}Inicial{% else %}Expandida NL{% endif %}</td></tr>
+        {% endfor %}
+        </tbody></table></div>
+      </details>
+    {% endfor %}
+  </section>
+
+  <section class="result">
+    <div class="eyebrow">ETAPA 3</div><h2>Las 80 iteraciones</h2>
+    <p class="hint">Cada fila muestra el estado antes y después de la ronda, la función utilizada, Wₜ y TEMP. Los registros se presentan en hexadecimal de 32 bits.</p>
+    {% for block in report.blocks %}
+      <details {% if loop.first %}open{% endif %}>
+        <summary>Bloque {{ block.number }} · Estado de encadenamiento: {{ block.chaining_state|join(' · ') }}</summary>
+        <div class="table-wrap"><table>
+          <thead><tr><th>t</th><th>Función</th><th>Wₜ</th><th>TEMP</th><th>A'</th><th>B'</th><th>C'</th><th>D'</th><th>E'</th></tr></thead>
+          <tbody>
+          {% for r in block.rounds %}
+            <tr>
+              <td>{{ r.iteration }}</td><td>{{ r.function }}</td><td>{{ r.word }}</td><td>{{ r.temp }}</td>
+              {% for value in r.after %}<td>{{ value }}</td>{% endfor %}
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table></div>
+      </details>
+    {% endfor %}
+  </section>
+  {% endif %}
+  <section class="note"><strong>Nota académica</strong><p>Esta vista expone trazas calculadas por la implementación. La inspección de estados ayuda a estudiar el algoritmo, pero no constituye una prueba de seguridad criptográfica.</p></section>
+  <footer>SHA-1 NL v1.0 · Análisis interno</footer>
+</main>
+<script>
+function copyAnalysisHash() {
+  const el = document.getElementById("hash");
+  if (el) navigator.clipboard.writeText(el.textContent);
+}
+</script>
+</body>
+</html>

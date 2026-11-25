@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SHA-1 NL | Generador experimental</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <main class="shell">
+    <nav class="top-nav"><a class="active" href="/">Generador</a><a href="/analysis">Análisis del algoritmo</a></nav>
+    <header class="hero">
+      <div class="eyebrow">ALGORITMO HASH EXPERIMENTAL · V1.0</div>
+      <h1>SHA-1 <span>NL</span></h1>
+      <p>Generador de huellas hash personalizado con fines académicos.</p>
+    </header>
+
+    <section class="panel">
+      <form method="post">
+        <label for="message">Mensaje de entrada</label>
+        <textarea id="message" name="message" placeholder="Escribe aquí el texto que deseas procesar..." required>{{ original if original is not none else '' }}</textarea>
+        <div class="actions">
+          <span class="hint">Codificación UTF-8 · Salida de 160 bits</span>
+          <button type="submit">Generar hash <span>→</span></button>
+        </div>
+      </form>
+    </section>
+
+    {% if error %}
+      <section class="result error"><strong>Error</strong><p>{{ error }}</p></section>
+    {% endif %}
+
+    {% if result %}
+      <section class="result">
+        <div class="result-top">
+          <div>
+            <div class="eyebrow">RESULTADO SHA-1 NL</div>
+            <h2>Hash generado</h2>
+          </div>
+          <button class="copy" type="button" onclick="copyHash()">Copiar</button>
+        </div>
+        <code id="hash">{{ result }}</code>
+        <div class="meta"><span>160 bits</span><span>40 caracteres hexadecimales</span></div>
+      </section>
+    {% endif %}
+
+    <section class="note">
+      <strong>Nota académica</strong>
+      <p>SHA-1 NL es una variante experimental. No debe utilizarse para proteger contraseñas, firmas digitales ni información sensible. La modificación de funciones booleanas no demuestra por sí sola mayor seguridad criptográfica.</p>
+    </section>
+
+    <footer>SHA-1 NL v1.0 · Proyecto académico</footer>
+  </main>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
